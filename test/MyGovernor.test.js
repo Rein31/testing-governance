@@ -1,3 +1,6 @@
+const web3 = require("web3");
+const BigNumber = require('bignumber.js');
+
 const Token = artifacts.require("GovermentToken");
 const Timelock = artifacts.require("TimeLock");
 const MyGovernor = artifacts.require("MyGovernor");
@@ -33,10 +36,10 @@ let governance;
     it('Check voting delay', async () => {
         let votingDelay = await governance.votingDelay();
         // console.log(votingPeriod.toString());
-        assert.equal(votingDelay.toString(), 1, "Voting Delay error")
+        assert.equal(votingDelay.toString(), 0, "Voting Delay error")
     })
 
-    it('Create a new proposal', async () => {
+    it('Create a new proposal and casting vote', async () => {
         const encodedFunction = await token.contract.methods.mint("0x986e386bE8c276945f43AF436F6213B5e7b332C6", 1000).encodeABI();
         const description = "Should we mint to address 0x8F36b5a1bEe8E110633b502687EC9c0e9143c391 with amount of 100 token?";
 
@@ -44,6 +47,39 @@ let governance;
 
         const id = tx.logs[0].args.proposalId;
         console.log(`Created proposal: ${id.toString()}\n`);
-        console.log(encodedFunction);
+        console.log(`Created proposal: ${BigNumber(id.toString())}\n`);
+        console.log(`Created proposal: ${BigInt(id.toString())}\n`);
+        console.log(id);
+
+        await token.delegate(accounts[0], { from: accounts[0] })
+        await token.delegate(accounts[6], { from: accounts[6] })
+        await token.delegate(accounts[7], { from: accounts[7] })
+        await token.delegate(accounts[8], { from: accounts[8] })
+        await token.delegate(accounts[9], { from: accounts[9] })
+
+        vote = await governance.castVote(id, 1, { from: accounts[0] })
+        vote = await governance.castVote(BigInt(id.toString()), 1, { from: accounts[6] })
+        vote = await governance.castVote(BigInt(id.toString()), 1, { from: accounts[7] })
+        vote = await governance.castVote(BigInt(id.toString()), 0, { from: accounts[8] })
+        vote = await governance.castVote(BigInt(id.toString()), 2, { from: accounts[9] })
+
+        const { againstVotes, forVotes, abstainVotes } = await governance.proposalVotes.call(id)
+        // console.log(`Votes For: ${web3.utils.fromWei(forVotes.toString(), 'ether')}`)
+        console.log(`Votes For: ${forVotes.toString()}`)
+        console.log(`Votes Against: ${web3.utils.fromWei(againstVotes.toString(), 'ether')}`)
+        console.log(`Votes Neutral: ${web3.utils.fromWei(abstainVotes.toString(), 'ether')}\n`)
+
+        proposalState = await governance.state.call(id)
+        console.log(`Current state of proposal: ${proposalState.toString()} (Active) \n`)
+        let balance = await token.balanceOf(accounts[0]);
+        console.log(balance.toString());
+
+        let delegates = await token.delegates(accounts[0])
+        console.log(delegates.toString());
+        
+        // console.log(forVotes.toString());
+        // console.log(tx.logs[0].args.proposalId);
+        // assert.equal();
     })
+
 })
