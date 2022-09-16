@@ -10,7 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
+    "@remix-project/remixd": "^0.6.6",
     "bignumber.js": "^9.1.0",
+    "truffle-test-helpers": "^0.2.2",
     "web3": "^1.8.0"
   }
 }
